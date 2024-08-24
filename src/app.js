@@ -49,11 +49,6 @@ const corsOptions = {
   },
 };
 
-// if (whitelist !== undefined) {
-//   const corsOptions = {
-//     credentials: true,
-//     origin: "*",
-//   };
 app.use(cors(corsOptions));
 
 app.use("/api/v1", productRouter);
