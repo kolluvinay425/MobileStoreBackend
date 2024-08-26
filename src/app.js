@@ -21,6 +21,7 @@ app.use(
 
 var whitelist = [
   "http://localhost:3000",
+  "https://dev.d3hbu45mo04vpo.amplifyapp.com",
   "http://localhost:5500",
   "http://127.0.0.1:5500",
   "https://hopeful-list-368909.oa.r.appspot.com",
