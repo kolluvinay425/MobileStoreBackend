@@ -21,6 +21,7 @@ COPY . .
 
 # Expose the port the app runs on
 EXPOSE 3000
+EXPOSE 80
 
 # Command to run the application
 CMD ["pm2-runtime", "start", "pm2.config.cjs"]
