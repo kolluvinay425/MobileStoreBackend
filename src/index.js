@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 if (!process.env.MONGO_URI) {
   throw new Error("No mongo url provided");
 }
-const port = process.env.PORT || 8081;
+const port = process.env.PORT || 80;
 
 const mongoConnection = mongoose.connect(process.env.MONGO_URI);
 
