@@ -20,7 +20,7 @@ RUN npm install -g pm2
 COPY . .
 
 # Expose the port the app runs on
-EXPOSE 80
+EXPOSE 5000
 
 # Command to run the application
 CMD ["pm2-runtime", "start", "pm2.config.cjs"]
