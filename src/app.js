@@ -37,6 +37,7 @@ var whitelist = [
   "http://192.168.150.57:3000",
   "http://93.34.232.3:3000",
   "https://aladia.stoplight.io",
+  "http://load-balancer-for-products-1598262599.eu-central-1.elb.amazonaws.com",
 ];
 
 const corsOptions = {
