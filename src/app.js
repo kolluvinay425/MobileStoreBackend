@@ -2,6 +2,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 import productRouter from "./routes/products.js";
+import mobileRouter from "./routes/mobile.js";
 import cors from "cors";
 
 const app = express();
@@ -54,5 +55,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use("/api/v1", productRouter);
+app.use("/api/v1", mobileRouter);
 
 export default app;
