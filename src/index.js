@@ -13,7 +13,7 @@ mongoose.createConnection(process.env.MONGO_URI).asPromise();
 mongoConnection.then(() => {
   app.listen(port, () => {
     grpcProductServer();
-    console.log(`Connected with mongoDB at ${process.env.MONGO_URI}`);
+    console.log(`Connected with mongoDB at gim beam ${process.env.MONGO_URI}`);
     console.table(listEndpoints(app));
     console.log(`server running on port ${port}`);
   });
