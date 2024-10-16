@@ -4,6 +4,7 @@ import bodyParser from "body-parser";
 import productRouter from "./routes/products.js";
 import mobileRouter from "./routes/mobile.js";
 import cors from "cors";
+import bikeRouter from "./routes/bike.js";
 
 const app = express();
 
@@ -56,5 +57,6 @@ app.use(cors(corsOptions));
 
 app.use("/api/v1", productRouter);
 app.use("/api/v1", mobileRouter);
+app.use("/api/v1", bikeRouter);
 
 export default app;
