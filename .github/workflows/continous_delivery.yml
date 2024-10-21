@@ -29,5 +29,5 @@ jobs:
           script: |
             docker login -u AWS -p $(aws ecr get-login-password --region ${{ secrets.AWS_REGION }}) ${{ secrets.ECR_REGISTRY }}
             docker pull ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:latest
-            cd /Vinay/docker-compose
+            cd Vinay
             docker-compose up -d
