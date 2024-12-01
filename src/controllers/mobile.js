@@ -1,68 +1,88 @@
 import axios from "axios";
-import { load } from "cheerio";
 import Mobile from "../models/mobile.js";
+import { load } from "cheerio";
+import { RateLimiterMemory } from "rate-limiter-flexible";
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const rateLimiter = new RateLimiterMemory({
+  points: 5, // 5 requests
+  duration: 1, // per 1 second
+});
 
-const fetchWithRetry = async (url, retries = 5, delayMs = 1000) => {
+const generateMobileData = async () => {
   try {
-    return await axios.get(url);
-  } catch (error) {
-    if (retries === 0 || error.response.status !== 429) {
-      throw error;
-    }
-    await delay(delayMs);
-    return fetchWithRetry(url, retries - 1, delayMs * 2);
-  }
-};
+    await rateLimiter.consume(1); // Consume 1 point per request
 
-const scrapeMobileData = async (req, res) => {
-  try {
-    const { data } = await fetchWithRetry("https://www.gsmarena.com/");
+    const { data } = await axios.get(
+      "https://www.samsung.com/us/smartphones/all-smartphones"
+    ); // Replace with actual URL
     const $ = load(data);
 
-    const mobiles = [];
-    const mobileLinks = [];
+    const samsungPhones = [];
+    $("div.product-card").each((i, element) => {
+      const model = $(element).find(".product-card__name").text().trim();
+      const price = $(element).find(".product-card__price").text().trim();
+      const image = $(element).find("img").attr("src");
+      const detailLink = $(element).find("a").attr("href");
 
-    $(".makers ul li a").each((index, element) => {
-      if (index < 10) {
-        // Limit to 10 mobile phones
-        const link = $(element).attr("href");
-        mobileLinks.push(`https://www.gsmarena.com/${link}`);
+      if (model) {
+        samsungPhones.push({
+          model,
+          brand: "Samsung",
+          price,
+          image,
+          detailLink,
+        });
       }
     });
 
-    console.log("Mobile Links:", mobileLinks); // Log the links to verify
+    for (let phone of samsungPhones) {
+      await rateLimiter.consume(1); // Consume 1 point per request
+      const detailData = await axios.get(
+        `https://www.samsung.com${phone.detailLink}`
+      );
+      const $$ = cheerio.load(detailData.data);
 
-    for (const link of mobileLinks) {
-      await delay(2000); // Add a 2-second delay between requests
-      const { data: mobileData } = await fetchWithRetry(link);
-      const $$ = load(mobileData);
-
-      // Log the HTML structure to verify selectors
-      console.log($$.html());
-
-      const brand = $$(".brand").text() || "N/A";
-      const model = $$(".specs-phone-name-title").text() || "N/A";
-      const price = $$(".price").text() || "N/A";
-      const specs = {
-        screen: $$(".specs .screen").text() || "N/A",
-        battery: $$(".specs .battery").text() || "N/A",
-        camera: $$(".specs .camera").text() || "N/A",
-      };
-
-      console.log("Scraped Data:", { brand, model, price, specs }); // Log the scraped data to verify
-
-      mobiles.push({ brand, model, price, specs });
+      phone.processor = $$("div.specs-processor").text().trim();
+      phone.ram = $$("div.specs-ram").text().trim();
+      phone.storage = $$("div.specs-storage").text().trim();
+      phone.battery = $$("div.specs-battery").text().trim();
+      phone.camera = $$("div.specs-camera").text().trim();
+      phone.screenSize = $$("div.specs-screen-size").text().trim();
+      phone.operatingSystem = $$("div.specs-operating-system").text().trim();
+      phone.releaseDate = $$("div.specs-release-date").text().trim();
+      phone.color = $$("div.specs-color").text().trim();
+      phone.shortDescription = $$("div.specs-short-description").text().trim();
+      phone.longDescription = $$("div.specs-long-description").text().trim();
     }
 
-    await Mobile.insertMany(mobiles);
-    console.log("Mobile data saved to MongoDB");
-
-    return res.status(200).json({ mobiles: mobiles });
+    return samsungPhones;
+  } catch (error) {
+    if (error instanceof RateLimiterMemory.ResError) {
+      console.error(
+        "Rate limit exceeded. Waiting for the next available slot."
+      );
+      await rateLimiter.waitPoints(1); // Wait for the next available slot
+      return generateMobileData(); // Retry the request
+    } else {
+      console.error("Error scraping mobile data:", error);
+      throw error;
+    }
+  }
+};
+const scrapeMobileData = async (req, res) => {
+  try {
+    const samsungPhones = await generateMobileData();
+    console.log("---------_>", samsungPhones);
+    for (let phone of samsungPhones) {
+      const newMobile = new Mobile(phone);
+      await newMobile.save();
+    }
+    res.send(
+      "Samsung mobiles with detailed specifications generated and saved to the database!"
+    );
   } catch (error) {
     console.error("Error scraping mobile data:", error);
-    return res.status(500).json({ error: "Error scraping mobile data" });
+    res.status(500).json({ error: "Error scraping mobile data" });
   }
 };
 
