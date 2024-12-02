@@ -1,89 +1,54 @@
-import axios from "axios";
 import Mobile from "../models/mobile.js";
-import { load } from "cheerio";
-import { RateLimiterMemory } from "rate-limiter-flexible";
 
-const rateLimiter = new RateLimiterMemory({
-  points: 5, // 5 requests
-  duration: 1, // per 1 second
-});
+// Advanced filtering route
+const filterMobiles = async (req, res) => {
+  const {
+    brand,
+    model,
+    minPrice,
+    maxPrice,
+    color,
+    ram,
+    storage,
+    battery,
+    screenSize,
+    operatingSystem,
+    releaseDate,
+    specs,
+  } = req.query;
 
-const generateMobileData = async () => {
-  try {
-    await rateLimiter.consume(1); // Consume 1 point per request
+  let filter = {};
 
-    const { data } = await axios.get(
-      "https://www.samsung.com/us/smartphones/all-smartphones"
-    ); // Replace with actual URL
-    const $ = load(data);
-
-    const samsungPhones = [];
-    $("div.product-card").each((i, element) => {
-      const model = $(element).find(".product-card__name").text().trim();
-      const price = $(element).find(".product-card__price").text().trim();
-      const image = $(element).find("img").attr("src");
-      const detailLink = $(element).find("a").attr("href");
-
-      if (model) {
-        samsungPhones.push({
-          model,
-          brand: "Samsung",
-          price,
-          image,
-          detailLink,
-        });
-      }
+  if (brand) filter.brand = brand;
+  if (model) filter.model = model;
+  if (minPrice || maxPrice) {
+    filter.price = {};
+    if (minPrice) filter.price.$gte = parseFloat(minPrice);
+    if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
+  }
+  if (color) filter.color = color;
+  if (ram) filter.ram = { $in: ram.split(",") };
+  if (storage) filter.storage = { $in: storage.split(",") };
+  if (battery) filter.battery = { $in: battery.split(",") };
+  if (screenSize) filter.screenSize = { $in: screenSize.split(",") };
+  if (operatingSystem)
+    filter.operatingSystem = { $in: operatingSystem.split(",") };
+  if (releaseDate) filter.releaseDate = { $in: releaseDate.split(",") };
+  if (specs) {
+    const specsArray = specs.split(",");
+    specsArray.forEach((spec) => {
+      const [key, value] = spec.split(":");
+      if (!filter.specs) filter.specs = {};
+      filter.specs[key] = value;
     });
-
-    for (let phone of samsungPhones) {
-      await rateLimiter.consume(1); // Consume 1 point per request
-      const detailData = await axios.get(
-        `https://www.samsung.com${phone.detailLink}`
-      );
-      const $$ = cheerio.load(detailData.data);
-
-      phone.processor = $$("div.specs-processor").text().trim();
-      phone.ram = $$("div.specs-ram").text().trim();
-      phone.storage = $$("div.specs-storage").text().trim();
-      phone.battery = $$("div.specs-battery").text().trim();
-      phone.camera = $$("div.specs-camera").text().trim();
-      phone.screenSize = $$("div.specs-screen-size").text().trim();
-      phone.operatingSystem = $$("div.specs-operating-system").text().trim();
-      phone.releaseDate = $$("div.specs-release-date").text().trim();
-      phone.color = $$("div.specs-color").text().trim();
-      phone.shortDescription = $$("div.specs-short-description").text().trim();
-      phone.longDescription = $$("div.specs-long-description").text().trim();
-    }
-
-    return samsungPhones;
-  } catch (error) {
-    if (error instanceof RateLimiterMemory.ResError) {
-      console.error(
-        "Rate limit exceeded. Waiting for the next available slot."
-      );
-      await rateLimiter.waitPoints(1); // Wait for the next available slot
-      return generateMobileData(); // Retry the request
-    } else {
-      console.error("Error scraping mobile data:", error);
-      throw error;
-    }
   }
-};
-const scrapeMobileData = async (req, res) => {
+  console.log("filter---->", filter);
   try {
-    const samsungPhones = await generateMobileData();
-    console.log("---------_>", samsungPhones);
-    for (let phone of samsungPhones) {
-      const newMobile = new Mobile(phone);
-      await newMobile.save();
-    }
-    res.send(
-      "Samsung mobiles with detailed specifications generated and saved to the database!"
-    );
+    const mobiles = await Mobile.find(filter);
+    res.json(mobiles);
   } catch (error) {
-    console.error("Error scraping mobile data:", error);
-    res.status(500).json({ error: "Error scraping mobile data" });
+    res.status(500).json({ error: "Error fetching data" });
   }
 };
 
-export { scrapeMobileData };
+export { filterMobiles };

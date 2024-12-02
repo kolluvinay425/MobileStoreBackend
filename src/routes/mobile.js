@@ -1,13 +1,13 @@
 import express from "express";
 
-import { scrapeMobileData } from "../controllers/mobile.js";
+import { filterMobiles } from "../controllers/mobile.js";
 
 const mobileRouter = express.Router();
 
 mobileRouter.get(
   "/mobiles",
 
-  scrapeMobileData
+  filterMobiles
 );
 
 export default mobileRouter;

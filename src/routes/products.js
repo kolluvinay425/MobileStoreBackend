@@ -1,6 +1,6 @@
 import express from "express";
 
-import { getRestaurants } from "../controllers/products.js";
+import { getBrands, getRestaurants } from "../controllers/products.js";
 
 const productRouter = express.Router();
 
@@ -10,4 +10,9 @@ productRouter.get(
   getRestaurants
 );
 
+productRouter.get(
+  "/brands",
+
+  getBrands
+);
 export default productRouter;
