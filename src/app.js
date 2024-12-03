@@ -72,6 +72,7 @@ app.get("/generate-fake-mobile-data", (req, res) => {
 
     return colors.map((color) => ({
       brand,
+      brandImage: faker.image.url(),
       model,
       price: faker.commerce.price(),
       specs: {

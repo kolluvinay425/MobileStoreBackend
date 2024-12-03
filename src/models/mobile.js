@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 
 const mobileSchema = new mongoose.Schema({
   brand: String,
+  brandImage: String,
   model: String,
   price: String,
   specs: Object,

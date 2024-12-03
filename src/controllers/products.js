@@ -18,10 +18,14 @@ const getRestaurants = async (req, res) => {
 
 const getBrands = async (req, res) => {
   try {
-    const brands = await Mobile.distinct("brand");
-    res.json(brands);
+    const brandsData = await Mobile.aggregate([
+      { $group: { _id: "$brand", brandImage: { $first: "$brandImage" } } },
+      { $project: { _id: 0, brand: "$_id", brandImage: 1 } },
+      { $sort: { brand: 1 } },
+    ]);
+    res.json(brandsData);
   } catch (error) {
-    res.status(500).json({ error: "Error fetching brands" });
+    res.status(500).json({ error: "Error fetching brand data" });
   }
 };
 export { getRestaurants, getBrands };
