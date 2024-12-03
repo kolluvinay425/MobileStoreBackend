@@ -1,9 +1,9 @@
-name: Deploy to ECR
+name: CI
 
 on:
   push:
     branches:
-      - dev
+      - main
 
 jobs:
   build-and-push:
@@ -27,6 +27,10 @@ jobs:
       - name: Log in to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Delete old image from ECR
+        run: |
+          aws ecr batch-delete-image --repository-name ${{ secrets.ECR_REPOSITORY }} --image-ids imageTag=latest
 
       - name: Build, tag, and push image to ECR
         env:
